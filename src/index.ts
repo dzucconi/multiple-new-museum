@@ -1,6 +1,6 @@
 import { DATA, type DataRecord } from "./data";
 
-const MONTHS: readonly string[] = [
+const MONTHS = [
   "January",
   "February",
   "March",
@@ -16,75 +16,47 @@ const MONTHS: readonly string[] = [
 ] as const;
 
 function shuffle<T>(arr: T[]): T[] {
-  let length = arr.length;
-
-  while (--length > 0) {
-    const j = Math.floor(Math.random() * (length + 1));
-    const temp = arr[j];
-    arr[j] = arr[length];
-    arr[length] = temp;
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
-
   return arr;
 }
 
-function toQueryString(
-  options: Record<string, string | number | undefined>
-): string {
-  return Object.entries(options)
-    .filter(([_, value]) => value !== undefined)
+const toQueryString = (params: Record<string, string | number | undefined>) =>
+  Object.entries(params)
+    .filter(([, value]) => value !== undefined)
     .map(([key, value]) => `${key}=${value}`)
     .join("&");
-}
 
-function randomColor(): string {
-  const hex = Math.floor(Math.random() * 0xffffff)
+const randomColor = () =>
+  `%23${Math.floor(Math.random() * 0xffffff)
     .toString(16)
-    .padStart(6, "0");
-  return `%23${hex}`;
-}
-
-interface LinkOptions extends Record<string, string | number | undefined> {
-  year: string;
-  month: string;
-  day: string;
-  color: string;
-  bgcolor: string;
-  hour?: string;
-  minute?: string;
-}
+    .padStart(6, "0")}`;
 
 function createLink(record: DataRecord): string {
-  const options: LinkOptions = {
+  const params = {
     year: record.ending[0],
     month: MONTHS[parseInt(record.ending[1], 10) - 1],
     day: record.ending[2],
     color: randomColor(),
     bgcolor: randomColor(),
+    ...(record.time && {
+      hour: record.time.ending[0],
+      minute: record.time.ending[1],
+    }),
   };
 
-  if (record.time !== null) {
-    options.hour = record.time.ending[0];
-    options.minute = record.time.ending[1];
-  }
-
-  const queryString = toQueryString(options);
-  const url = `http://xxith.com/?${queryString}`;
-  return `<a href="${url}" target="_blank">${record.title}</a>`;
+  return `<a href="http://xxith.com/?${toQueryString(
+    params
+  )}" target="_blank">${record.title}</a>`;
 }
 
-function initialize(): void {
-  const shuffledData = shuffle([...DATA]);
-  const links = shuffledData.map(createLink);
+const initialize = () =>
+  (document.body.innerHTML = shuffle([...DATA])
+    .map(createLink)
+    .join(", "));
 
-  const body = document.body;
-  if (body) {
-    body.innerHTML = links.join(", ");
-  }
-}
-
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initialize);
-} else {
-  initialize();
-}
+document.readyState === "loading"
+  ? document.addEventListener("DOMContentLoaded", initialize)
+  : initialize();
