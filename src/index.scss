@@ -1,0 +1,12 @@
+body {
+  margin: 20px;
+  line-height: 1.25em;
+}
+
+a {
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
